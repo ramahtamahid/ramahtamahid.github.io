@@ -629,6 +629,25 @@
 
         lastOrderId = 'RTM-' + Date.now().toString().slice(-6);
 
+        var orderData = {
+          orderCode: lastOrderId,
+          items: cart.map(function(c){
+            return { name: c.name, variant: c.variantLabel, price: c.price, qty: c.qty };
+          }),
+          total: cartTotal(),
+          customerName: name,
+          customerPhone: phone,
+          fulfillment: fulfill,
+          address: fulfill === 'delivery' ? address : '',
+          payment: payment,
+          note: note,
+          status: 'baru',
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        db.collection('orders').add(orderData).catch(function(err){
+          console.error('Gagal simpan pesanan ke Firestore:', err);
+        });
+
         var lines = [];
         lines.push('Halo Ramah Tamah, saya mau order (' + lastOrderId + '):');
         cart.forEach(function(c){
