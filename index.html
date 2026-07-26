@@ -19,6 +19,7 @@
     --cream-dim: rgba(238,244,251,0.78);
   }
   *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{width:100%; max-width:100%;}
   html{scroll-behavior:smooth;}
   body{
     background:var(--ink);
@@ -57,10 +58,15 @@
   .nav{
     display:flex; align-items:center; justify-content:space-between;
     padding:8px 28px;
-    max-width:1120px; margin:0 auto;
+    width:100%;
   }
   .brandmark{
     display:flex; align-items:center; gap:12px;
+    min-width:0;
+    flex-shrink:1;
+  }
+  .logo-img{
+    height:32px; width:auto; max-width:100%;
   }
   .badge-mini{
     width:38px; height:38px; border-radius:50%;
@@ -92,6 +98,8 @@
     font-size:0.85rem;
     font-weight:600;
     letter-spacing:0.02em;
+    flex-shrink:0;
+    white-space:nowrap;
   }
   .burger{display:none; flex-direction:column; gap:5px; cursor:pointer; background:none; border:none;}
   .burger span{width:24px; height:2px; background:var(--text-strong);}
@@ -101,21 +109,19 @@
     height:100vh;
     margin-top:0;
     position:relative;
-    display:flex;
-    align-items:center;
-    justify-content:center;
     overflow:hidden;
   }
-  .hero .video-placeholder{
-    width:100%; height:100%; max-width:none;
-    border:none; border-radius:0;
-    aspect-ratio:auto;
-    box-shadow:none;
-    background:url('/images/hero.png') center center / cover no-repeat;
-    position:relative;
+  .hero .hero-visual{
+    position:absolute; inset:0;
+    width:100%; height:100%;
   }
-  .hero .video-placeholder::after{
-    content:"";
+  .hero .hero-img{
+    position:absolute; top:0; left:0;
+    width:100%; height:100%;
+    object-fit:cover; object-position:center;
+    display:block;
+  }
+  .hero .hero-overlay{
     position:absolute; inset:0;
     background:linear-gradient(180deg, rgba(15,28,48,0.35) 0%, rgba(15,28,48,0.15) 40%, rgba(15,28,48,0.55) 100%);
   }
@@ -402,6 +408,8 @@
   @media(max-width:520px){
     .tickets{grid-template-columns:1fr;}
     .wrap{padding:0 20px;}
+    .logo-img{height:24px;}
+    .nav{padding:8px 16px;}
   }
   @media (prefers-reduced-motion: reduce){
     .reveal{transition:none; opacity:1; transform:none;}
@@ -413,7 +421,7 @@
 <header>
   <div class="nav">
     <div class="brandmark">
-      <img src="/images/logo.png" alt="Ramah Tamah" style="height:32px; width:auto;">
+      <img src="/images/logo.png" alt="Ramah Tamah" class="logo-img">
     </div>
     <a href="/shop/" class="nav-cta">Belanja</a>
   </div>
@@ -421,8 +429,8 @@
 
 <section class="hero">
   <div class="hero-visual reveal">
-    <div class="video-placeholder">
-    </div>
+    <img src="/images/hero.png" alt="Ramah Tamah" class="hero-img">
+    <div class="hero-overlay"></div>
   </div>
 </section>
 
