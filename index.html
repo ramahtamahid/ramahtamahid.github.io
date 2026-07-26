@@ -54,6 +54,12 @@
     z-index:50;
     background:transparent;
     border-bottom:none;
+    transition:background 0.3s ease, border-color 0.3s ease;
+  }
+  header.scrolled{
+    background:rgba(59,107,160,0.92);
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--ink-line);
   }
   .nav{
     display:flex; align-items:center; justify-content:space-between;
@@ -66,7 +72,7 @@
     flex-shrink:1;
   }
   .logo-img{
-    height:32px; width:auto; max-width:100%;
+    height:22px; width:auto; max-width:100%;
   }
   .badge-mini{
     width:38px; height:38px; border-radius:50%;
@@ -408,7 +414,7 @@
   @media(max-width:520px){
     .tickets{grid-template-columns:1fr;}
     .wrap{padding:0 20px;}
-    .logo-img{height:24px;}
+    .logo-img{height:18px;}
     .nav{padding:8px 16px;}
   }
   @media (prefers-reduced-motion: reduce){
@@ -598,6 +604,19 @@
 </footer>
 
 <script>
+  const headerEl = document.querySelector('header');
+  const heroEl = document.querySelector('.hero');
+  function toggleHeader(){
+    const heroBottom = heroEl.getBoundingClientRect().bottom;
+    if(heroBottom <= 80){
+      headerEl.classList.add('scrolled');
+    } else {
+      headerEl.classList.remove('scrolled');
+    }
+  }
+  toggleHeader();
+  window.addEventListener('scroll', toggleHeader);
+
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(e => {
       if(e.isIntersecting){
