@@ -110,6 +110,18 @@
     width:100%; height:100%; max-width:none;
     border:none; border-radius:0;
     aspect-ratio:auto;
+    box-shadow:none;
+    background:url('/images/hero.png') center center / cover no-repeat;
+    position:relative;
+  }
+  .hero .video-placeholder::after{
+    content:"";
+    position:absolute; inset:0;
+    background:linear-gradient(180deg, rgba(15,28,48,0.35) 0%, rgba(15,28,48,0.15) 40%, rgba(15,28,48,0.55) 100%);
+  }
+  .hero .video-play,
+  .hero .video-placeholder .mono{
+    position:relative; z-index:1;
   }
 
   /* ===== INTRO (penjelasan, di bawah hero) ===== */
@@ -410,11 +422,6 @@
 <section class="hero">
   <div class="hero-visual reveal">
     <div class="video-placeholder">
-      <!-- Ganti div ini dengan <video> atau <iframe> video profil perusahaan kamu -->
-      <div class="video-play">
-        <svg viewBox="0 0 24 24" width="26" height="26"><path d="M8 5v14l11-7z" fill="#FFFFFF"/></svg>
-      </div>
-      <span class="mono">Video Profil Perusahaan</span>
     </div>
   </div>
 </section>
