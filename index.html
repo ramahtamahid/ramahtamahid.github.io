@@ -51,13 +51,12 @@
   header{
     position:fixed; top:0; left:0; right:0;
     z-index:50;
-    background:rgba(59,107,160,0.88);
-    backdrop-filter:blur(10px);
-    border-bottom:1px solid var(--ink-line);
+    background:transparent;
+    border-bottom:none;
   }
   .nav{
     display:flex; align-items:center; justify-content:space-between;
-    padding:16px 28px;
+    padding:8px 28px;
     max-width:1120px; margin:0 auto;
   }
   .brandmark{
@@ -88,7 +87,7 @@
   .nav-cta{
     background:var(--amber);
     color:#FFFFFF;
-    padding:9px 18px;
+    padding:7px 16px;
     border-radius:2px;
     font-size:0.85rem;
     font-weight:600;
@@ -97,44 +96,54 @@
   .burger{display:none; flex-direction:column; gap:5px; cursor:pointer; background:none; border:none;}
   .burger span{width:24px; height:2px; background:var(--text-strong);}
 
-  /* ===== HERO ===== */
+  /* ===== HERO (visual full screen) ===== */
   .hero{
-    padding:170px 0 100px;
+    height:100vh;
+    margin-top:0;
     position:relative;
-  }
-  .hero-grid{
-    display:grid;
-    grid-template-columns:1.15fr 0.85fr;
-    gap:60px;
+    display:flex;
     align-items:center;
+    justify-content:center;
+    overflow:hidden;
+  }
+  .hero .video-placeholder{
+    width:100%; height:100%; max-width:none;
+    border:none; border-radius:0;
+    aspect-ratio:auto;
+  }
+
+  /* ===== INTRO (penjelasan, di bawah hero) ===== */
+  .intro{
+    display:flex; justify-content:center;
+    text-align:center;
+  }
+  .intro-inner{max-width:640px; margin:0 auto;}
+  .intro h1{
+    font-size:clamp(2.6rem, 5.2vw, 4.4rem);
+  }
+  .intro h1 em{
+    font-style:italic;
+    color:var(--blue);
+    font-weight:500;
+  }
+  .intro p.lead{
+    margin-top:26px;
+    font-size:1.08rem;
+    color:var(--cream-dim);
+  }
+  .hero-actions{
+    display:flex; gap:14px; margin-top:38px; flex-wrap:wrap;
+    justify-content:center;
   }
   .eyebrow{
     color:var(--blue);
-    display:flex; align-items:center; gap:10px;
+    display:flex; align-items:center; justify-content:center; gap:10px;
     margin-bottom:22px;
   }
   .eyebrow::before{
     content:"";
     width:28px; height:1px;
     background:var(--blue);
-  }
-  .hero h1{
-    font-size:clamp(2.6rem, 5.2vw, 4.4rem);
-    max-width:11ch;
-  }
-  .hero h1 em{
-    font-style:italic;
-    color:var(--blue);
-    font-weight:500;
-  }
-  .hero p.lead{
-    margin-top:26px;
-    max-width:46ch;
-    font-size:1.08rem;
-    color:var(--cream-dim);
-  }
-  .hero-actions{
-    display:flex; gap:14px; margin-top:38px; flex-wrap:wrap;
   }
   .btn{
     display:inline-flex; align-items:center; gap:8px;
@@ -158,7 +167,8 @@
 
   /* hero visual — video profil placeholder */
   .hero-visual{
-    display:flex; justify-content:center;
+    width:100%; height:100%;
+    display:flex; justify-content:center; align-items:center;
   }
   .video-placeholder{
     width:100%; max-width:420px;
@@ -368,8 +378,6 @@
   @media(max-width:900px){
     nav ul{display:none;}
     .burger{display:flex;}
-    .hero-grid{grid-template-columns:1fr; gap:70px;}
-    .hero-visual{order:-1;}
     .hero-scene{width:280px;}
     .hero-tag-1{left:0;}
     .hero-tag-2{right:0;}
@@ -393,44 +401,32 @@
 <header>
   <div class="nav">
     <div class="brandmark">
-      <div class="badge-mini">
-        <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <text x="50" y="42" text-anchor="middle" font-family="Georgia, serif" font-weight="700" font-size="34" fill="#FFFFFF">RM</text>
-          <text x="50" y="78" text-anchor="middle" font-family="Georgia, serif" font-weight="700" font-size="34" fill="#FFFFFF">TM</text>
-        </svg>
-      </div>
-      <span>Ramah Tamah</span>
+      <img src="/images/logo.png" alt="Ramah Tamah" style="height:32px; width:auto;">
     </div>
-    <ul>
-      <li><a href="#filosofi">Filosofi</a></li>
-      <li><a href="#racikan">Racikan</a></li>
-      <li><a href="#ruang">Ruang</a></li>
-      <li><a href="#kunjungi">Kunjungi</a></li>
-    </ul>
     <a href="/shop/" class="nav-cta">Belanja</a>
-    <button class="burger" id="burgerBtn" aria-label="Buka menu"><span></span><span></span><span></span></button>
   </div>
 </header>
 
 <section class="hero">
-  <div class="wrap hero-grid">
-    <div>
-      <span class="eyebrow mono">Coffee Roastery &amp; Artisan Space</span>
-      <h1>Kopi yang<br>diseduh untuk <em>berkumpul.</em></h1>
-      <p class="lead">Ramah tamah — sebuah kata yang berarti keramahan yang mempertemukan orang. Itu juga yang kami racik di setiap cangkir: roastbean pilihan, teh artisan, condiment buatan sendiri, dan ruang untuk berkarya bersama.</p>
-      <div class="hero-actions">
-        <a href="#racikan" class="btn btn-primary">Lihat Racikan Kami</a>
-        <a href="#kunjungi" class="btn btn-ghost">Kunjungi Kedai</a>
+  <div class="hero-visual reveal">
+    <div class="video-placeholder">
+      <!-- Ganti div ini dengan <video> atau <iframe> video profil perusahaan kamu -->
+      <div class="video-play">
+        <svg viewBox="0 0 24 24" width="26" height="26"><path d="M8 5v14l11-7z" fill="#FFFFFF"/></svg>
       </div>
+      <span class="mono">Video Profil Perusahaan</span>
     </div>
-    <div class="hero-visual reveal">
-      <div class="video-placeholder">
-        <!-- Ganti div ini dengan <video> atau <iframe> video profil perusahaan kamu -->
-        <div class="video-play">
-          <svg viewBox="0 0 24 24" width="26" height="26"><path d="M8 5v14l11-7z" fill="#FFFFFF"/></svg>
-        </div>
-        <span class="mono">Video Profil Perusahaan</span>
-      </div>
+  </div>
+</section>
+
+<section class="intro">
+  <div class="wrap intro-inner">
+    <span class="eyebrow mono">Coffee Roastery &amp; Artisan Space</span>
+    <h1>Kopi yang diseduh untuk <em>berkumpul.</em></h1>
+    <p class="lead">Ramah tamah — sebuah kata yang berarti keramahan yang mempertemukan orang. Itu juga yang kami racik di setiap cangkir: roastbean pilihan, teh artisan, condiment buatan sendiri, dan ruang untuk berkarya bersama.</p>
+    <div class="hero-actions">
+      <a href="#racikan" class="btn btn-primary">Lihat Racikan Kami</a>
+      <a href="#kunjungi" class="btn btn-ghost">Kunjungi Kedai</a>
     </div>
   </div>
 </section>
@@ -587,21 +583,6 @@
 </footer>
 
 <script>
-  const burger = document.getElementById('burgerBtn');
-  const navList = document.querySelector('nav ul');
-  burger.addEventListener('click', () => {
-    navList.style.display = navList.style.display === 'flex' ? 'none' : 'flex';
-    navList.style.flexDirection = 'column';
-    navList.style.position = 'absolute';
-    navList.style.top = '64px';
-    navList.style.right = '28px';
-    navList.style.background = '#FFFFFF';
-    navList.style.padding = '18px 24px';
-    navList.style.border = '1px solid rgba(22,40,63,0.14)';
-    navList.style.boxShadow = '0 12px 30px rgba(22,40,63,0.15)';
-    navList.style.gap = '16px';
-  });
-
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(e => {
       if(e.isIntersecting){
