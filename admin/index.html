@@ -138,6 +138,28 @@
 
   .empty-msg{color:var(--cream-dim); font-size:0.9rem; padding:20px 0; text-align:center;}
 
+  .order-item{padding:16px 0; border-bottom:1px solid var(--ink-line);}
+  .order-item:last-child{border-bottom:none;}
+  .order-top{display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px;}
+  .order-code{font-family:Georgia,serif; font-weight:700; color:var(--text-strong); font-size:1rem;}
+  .order-cust{font-size:0.85rem; color:var(--cream-dim);}
+  .badge{
+    font-size:0.7rem; text-transform:uppercase; letter-spacing:0.05em;
+    padding:4px 10px; border-radius:2px; white-space:nowrap;
+  }
+  .badge-baru{background:rgba(240,184,0,0.18); color:#F0B800;}
+  .badge-diproses{background:rgba(91,143,199,0.2); color:#9CC4EE;}
+  .badge-selesai{background:rgba(46,139,87,0.2); color:#8FD8AE;}
+  .order-items{font-size:0.85rem; margin:6px 0; color:var(--cream-dim);}
+  .order-items div{margin-bottom:2px;}
+  .order-total{font-weight:700; color:var(--text-strong); margin-top:4px;}
+  .order-meta{font-size:0.78rem; color:var(--cream-dim); margin-top:6px;}
+  .order-actions{display:flex; gap:8px; margin-top:10px;}
+  select.status-select{
+    padding:6px 10px; font-size:0.8rem; background:rgba(238,244,251,0.06);
+    border:1px solid var(--ink-line); color:var(--text-strong); border-radius:2px;
+  }
+
   /* LOGIN GATE */
   #loginScreen{
     min-height:100vh; display:flex; align-items:center; justify-content:center;
@@ -225,6 +247,11 @@
     </div>
 
     <div class="panel">
+      <h2>Pesanan Online</h2>
+      <div id="orderList"><div class="empty-msg">Memuat pesanan...</div></div>
+    </div>
+
+    <div class="panel">
       <h2>Produk Aktif</h2>
       <div id="productList"><div class="empty-msg">Memuat produk...</div></div>
     </div>
@@ -271,12 +298,81 @@
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('adminApp').style.display = 'block';
       startProductListener();
+      startOrdersListener();
     } else {
       document.getElementById('loginScreen').style.display = 'flex';
       document.getElementById('adminApp').style.display = 'none';
       if(unsubscribeProducts){ unsubscribeProducts(); unsubscribeProducts = null; }
+      if(unsubscribeOrders){ unsubscribeOrders(); unsubscribeOrders = null; }
     }
   });
+
+  var unsubscribeOrders = null;
+
+  function rupiah(n){ return 'Rp' + Number(n || 0).toLocaleString('id-ID'); }
+
+  function renderOrders(orders){
+    var listEl = document.getElementById('orderList');
+    if(orders.length === 0){
+      listEl.innerHTML = '<div class="empty-msg">Belum ada pesanan online.</div>';
+      return;
+    }
+    listEl.innerHTML = '';
+    orders.forEach(function(o){
+      var item = document.createElement('div');
+      item.className = 'order-item';
+      var itemsHtml = (o.items || []).map(function(it){
+        return '<div>' + it.name + ' (' + it.variant + ') x' + it.qty + ' — ' + rupiah(it.price * it.qty) + '</div>';
+      }).join('');
+      var statusClass = 'badge-' + (o.status || 'baru');
+      var fulfillText = o.fulfillment === 'delivery' ? ('Dikirim — ' + (o.address || '')) : 'Ambil di toko';
+      item.innerHTML =
+        '<div class="order-top">' +
+          '<div><div class="order-code">' + (o.orderCode || o.id) + '</div>' +
+            '<div class="order-cust">' + o.customerName + ' &middot; ' + o.customerPhone + '</div></div>' +
+          '<span class="badge ' + statusClass + '">' + (o.status || 'baru') + '</span>' +
+        '</div>' +
+        '<div class="order-items">' + itemsHtml + '</div>' +
+        '<div class="order-total">' + rupiah(o.total) + '</div>' +
+        '<div class="order-meta">' + fulfillText + ' &middot; Bayar: ' + o.payment + (o.note ? (' &middot; Catatan: ' + o.note) : '') + '</div>' +
+        '<div class="order-actions">' +
+          '<select class="status-select">' +
+            '<option value="baru"' + (o.status === 'baru' ? ' selected' : '') + '>Baru</option>' +
+            '<option value="diproses"' + (o.status === 'diproses' ? ' selected' : '') + '>Diproses</option>' +
+            '<option value="selesai"' + (o.status === 'selesai' ? ' selected' : '') + '>Selesai</option>' +
+          '</select>' +
+          '<button class="small-btn danger delete-order-btn">Hapus</button>' +
+        '</div>';
+      listEl.appendChild(item);
+      item.querySelector('.status-select').addEventListener('change', function(e){
+        db.collection('orders').doc(o.id).update({ status: e.target.value }).catch(function(err){
+          alert('Gagal update status: ' + err.message);
+        });
+      });
+      item.querySelector('.delete-order-btn').addEventListener('click', function(){
+        if(confirm('Hapus pesanan ' + (o.orderCode || o.id) + '?')){
+          db.collection('orders').doc(o.id).delete().catch(function(err){
+            alert('Gagal hapus: ' + err.message);
+          });
+        }
+      });
+    });
+  }
+
+  function startOrdersListener(){
+    if(unsubscribeOrders) return;
+    unsubscribeOrders = db.collection('orders').orderBy('createdAt', 'desc').onSnapshot(function(snapshot){
+      var orders = snapshot.docs.map(function(doc){
+        var data = doc.data();
+        data.id = doc.id;
+        return data;
+      });
+      renderOrders(orders);
+    }, function(err){
+      console.error('Gagal ambil pesanan:', err);
+      document.getElementById('orderList').innerHTML = '<div class="empty-msg">Gagal memuat pesanan: ' + err.message + '</div>';
+    });
+  }
 
   function startProductListener(){
     if(unsubscribeProducts) return;
