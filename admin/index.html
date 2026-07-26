@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Produk — Ramah Tamah</title>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<style>
+  :root{
+    --ink:#3B6BA0;
+    --ink-soft:#2F5C8C;
+    --ink-line: rgba(238,244,251,0.22);
+    --blue:#16283F;
+    --blue-deep:#0F1C30;
+    --text-strong:#EEF4FB;
+    --cream-dim: rgba(238,244,251,0.78);
+    --danger:#B3462C;
+    --ok:#2E8B57;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background:var(--ink);
+    color:var(--cream-dim);
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+    font-size:16px;
+    line-height:1.5;
+  }
+  h1,h2,h3{
+    font-family:Georgia,'Iowan Old Style','Palatino Linotype','Times New Roman',serif;
+    color:var(--text-strong);
+    line-height:1.15;
+    font-weight:600;
+  }
+  a{color:inherit;}
+  button{font-family:inherit; cursor:pointer;}
+  .mono{
+    font-family:ui-monospace,'SF Mono','Cascadia Code','Courier New',monospace;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    font-size:0.7rem;
+  }
+  .wrap{max-width:960px; margin:0 auto; padding:0 24px;}
+
+  header{
+    background:var(--blue-deep);
+    padding:16px 0;
+    border-bottom:1px solid var(--ink-line);
+  }
+  header .wrap{display:flex; align-items:center; justify-content:space-between;}
+  .brand{display:flex; align-items:center; gap:12px;}
+  .logo-img{height:24px; width:auto;}
+  .brand strong{color:var(--text-strong); font-family:Georgia,serif; font-size:1.05rem;}
+  .shop-link{
+    font-size:0.85rem; color:var(--cream-dim);
+    border:1px solid var(--ink-line); padding:8px 14px; border-radius:2px;
+  }
+  .shop-link:hover{color:var(--text-strong); border-color:var(--text-strong);}
+
+  main{padding:40px 0 80px;}
+
+  .panel{
+    background:var(--ink-soft);
+    border:1px solid var(--ink-line);
+    border-radius:4px;
+    padding:24px;
+    margin-bottom:28px;
+  }
+  .panel h2{font-size:1.15rem; margin-bottom:18px;}
+
+  .field{margin-bottom:16px;}
+  .field label{
+    display:block; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.05em;
+    color:var(--cream-dim); margin-bottom:6px;
+  }
+  .field input, .field textarea, .field select{
+    width:100%; padding:10px 12px;
+    background:rgba(238,244,251,0.06);
+    border:1px solid var(--ink-line);
+    border-radius:2px;
+    color:var(--text-strong);
+    font-family:inherit; font-size:0.95rem;
+  }
+  .field textarea{resize:vertical; min-height:70px;}
+  .row2{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+
+  .variant-row{
+    display:grid; grid-template-columns:1fr 140px 40px; gap:10px; margin-bottom:10px; align-items:center;
+  }
+  .variant-row input{padding:8px 10px;}
+  .icon-btn{
+    background:transparent; border:1px solid var(--ink-line); color:var(--cream-dim);
+    border-radius:2px; width:36px; height:36px; font-size:1.1rem;
+  }
+  .icon-btn:hover{border-color:var(--danger); color:var(--danger);}
+  .add-variant-btn{
+    background:transparent; border:1px dashed var(--ink-line); color:var(--cream-dim);
+    padding:8px 14px; border-radius:2px; font-size:0.85rem; margin-bottom:16px;
+  }
+  .add-variant-btn:hover{border-color:var(--text-strong); color:var(--text-strong);}
+
+  .actions{display:flex; gap:12px; margin-top:8px;}
+  .btn{
+    padding:10px 20px; border-radius:2px; border:none; font-weight:600; font-size:0.9rem;
+  }
+  .btn-primary{background:var(--text-strong); color:var(--blue-deep);}
+  .btn-primary:hover{opacity:0.9;}
+  .btn-ghost{background:transparent; border:1px solid var(--ink-line); color:var(--cream-dim);}
+  .btn-ghost:hover{color:var(--text-strong); border-color:var(--text-strong);}
+
+  .status{font-size:0.85rem; margin-top:10px;}
+  .status.ok{color:#B8E0C8;}
+  .status.err{color:#F0B8A8;}
+
+  .list-item{
+    display:flex; gap:16px; align-items:flex-start;
+    padding:16px 0; border-bottom:1px solid var(--ink-line);
+  }
+  .list-item:last-child{border-bottom:none;}
+  .list-thumb{
+    width:64px; height:64px; border-radius:2px; background:rgba(238,244,251,0.08);
+    flex-shrink:0; display:flex; align-items:center; justify-content:center;
+    overflow:hidden; font-family:Georgia,serif; font-weight:700; color:var(--text-strong);
+  }
+  .list-thumb img{width:100%; height:100%; object-fit:cover;}
+  .list-info{flex:1; min-width:0;}
+  .list-info h3{font-size:1rem; margin-bottom:2px;}
+  .list-info .cat{color:var(--cream-dim);}
+  .list-info .variants{font-size:0.85rem; margin-top:6px; color:var(--cream-dim);}
+  .list-btns{display:flex; gap:8px; flex-shrink:0;}
+  .small-btn{
+    padding:7px 12px; font-size:0.8rem; border-radius:2px; border:1px solid var(--ink-line);
+    background:transparent; color:var(--cream-dim);
+  }
+  .small-btn:hover{color:var(--text-strong); border-color:var(--text-strong);}
+  .small-btn.danger:hover{color:var(--danger); border-color:var(--danger);}
+
+  .empty-msg{color:var(--cream-dim); font-size:0.9rem; padding:20px 0; text-align:center;}
+
+  /* LOGIN GATE */
+  #loginScreen{
+    min-height:100vh; display:flex; align-items:center; justify-content:center;
+  }
+  .login-box{
+    width:100%; max-width:360px;
+    background:var(--ink-soft);
+    border:1px solid var(--ink-line);
+    border-radius:4px;
+    padding:32px;
+  }
+  .login-box h2{font-size:1.2rem; margin-bottom:20px; text-align:center;}
+  #adminApp{display:none;}
+</style>
+</head>
+<body>
+
+<div id="loginScreen">
+  <div class="login-box">
+    <h2>Masuk Admin</h2>
+    <form id="loginForm">
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="loginEmail" required>
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="loginPassword" required>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%;">Masuk</button>
+      <div class="status err" id="loginStatus"></div>
+    </form>
+  </div>
+</div>
+
+<div id="adminApp">
+<header>
+  <div class="wrap">
+    <div class="brand">
+      <img src="/images/logo.png" alt="Ramah Tamah" class="logo-img">
+      <strong>Admin Produk</strong>
+    </div>
+    <div style="display:flex; gap:10px; align-items:center;">
+      <a href="/shop/" class="shop-link">Lihat Shop &rarr;</a>
+      <button class="shop-link" id="logoutBtn" style="border:none; background:transparent;">Keluar</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+
+    <div class="panel">
+      <h2 id="formTitle">Tambah Produk Baru</h2>
+      <form id="productForm">
+        <div class="field">
+          <label>Nama Produk</label>
+          <input type="text" id="fName" required placeholder="mis. Roastbeans SO Manglayang Red Honey">
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label>Kategori</label>
+            <input type="text" id="fCategory" required placeholder="mis. Roastbeans">
+          </div>
+          <div class="field">
+            <label>URL Gambar (opsional)</label>
+            <input type="text" id="fImage" placeholder="https://...">
+          </div>
+        </div>
+        <div class="field">
+          <label>Deskripsi Singkat</label>
+          <textarea id="fDesc" placeholder="Deskripsi produk yang tampil di kartu shop"></textarea>
+        </div>
+
+        <label style="display:block; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--cream-dim); margin-bottom:8px;">Varian &amp; Harga</label>
+        <div id="variantList"></div>
+        <button type="button" class="add-variant-btn" id="addVariantBtn">+ Tambah Varian</button>
+
+        <div class="actions">
+          <button type="submit" class="btn btn-primary" id="submitBtn">Simpan Produk</button>
+          <button type="button" class="btn btn-ghost" id="cancelEditBtn" style="display:none;">Batal Edit</button>
+        </div>
+        <div class="status" id="formStatus"></div>
+      </form>
+    </div>
+
+    <div class="panel">
+      <h2>Produk Aktif</h2>
+      <div id="productList"><div class="empty-msg">Memuat produk...</div></div>
+    </div>
+
+  </div>
+</main>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var firebaseConfig = {
+    apiKey: "AIzaSyDaoGRPEl6Gm34CbkP0-CMM3el-beul0zc",
+    authDomain: "ramah-tamah.firebaseapp.com",
+    projectId: "ramah-tamah",
+    storageBucket: "ramah-tamah.firebasestorage.app",
+    messagingSenderId: "693281781727",
+    appId: "1:693281781727:web:d49fab3036378fbb76766a"
+  };
+  firebase.initializeApp(firebaseConfig);
+  var db = firebase.firestore();
+  var auth = firebase.auth();
+
+  var unsubscribeProducts = null;
+
+  document.getElementById('loginForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    var email = document.getElementById('loginEmail').value.trim();
+    var password = document.getElementById('loginPassword').value;
+    var statusEl = document.getElementById('loginStatus');
+    statusEl.textContent = '';
+    auth.signInWithEmailAndPassword(email, password).catch(function(err){
+      statusEl.textContent = 'Login gagal: email atau password salah.';
+    });
+  });
+
+  document.getElementById('logoutBtn').addEventListener('click', function(){
+    auth.signOut();
+  });
+
+  auth.onAuthStateChanged(function(user){
+    if(user){
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('adminApp').style.display = 'block';
+      startProductListener();
+    } else {
+      document.getElementById('loginScreen').style.display = 'flex';
+      document.getElementById('adminApp').style.display = 'none';
+      if(unsubscribeProducts){ unsubscribeProducts(); unsubscribeProducts = null; }
+    }
+  });
+
+  function startProductListener(){
+    if(unsubscribeProducts) return;
+    unsubscribeProducts = db.collection('products').orderBy('createdAt', 'desc').onSnapshot(function(snapshot){
+      var products = snapshot.docs.map(function(doc){
+        var data = doc.data();
+        data.id = doc.id;
+        return data;
+      });
+      renderList(products);
+    }, function(err){
+      console.error('Gagal ambil produk:', err);
+      document.getElementById('productList').innerHTML = '<div class="empty-msg">Gagal memuat produk: ' + err.message + '</div>';
+    });
+  }
+
+  var editingId = null;
+  var variantCount = 0;
+
+  function uid(){ return Math.random().toString(36).slice(2, 8); }
+
+  function addVariantRow(label, price){
+    variantCount++;
+    var row = document.createElement('div');
+    row.className = 'variant-row';
+    row.dataset.rowId = uid();
+    row.innerHTML =
+      '<input type="text" class="v-label" placeholder="mis. 100gr" value="' + (label || '') + '">' +
+      '<input type="number" class="v-price" placeholder="Harga" value="' + (price != null ? price : '') + '">' +
+      '<button type="button" class="icon-btn remove-variant">&times;</button>';
+    document.getElementById('variantList').appendChild(row);
+    row.querySelector('.remove-variant').addEventListener('click', function(){
+      row.remove();
+    });
+  }
+
+  document.getElementById('addVariantBtn').addEventListener('click', function(){
+    addVariantRow('', '');
+  });
+
+  function resetForm(){
+    editingId = null;
+    document.getElementById('productForm').reset();
+    document.getElementById('variantList').innerHTML = '';
+    addVariantRow('', '');
+    document.getElementById('formTitle').textContent = 'Tambah Produk Baru';
+    document.getElementById('submitBtn').textContent = 'Simpan Produk';
+    document.getElementById('cancelEditBtn').style.display = 'none';
+    document.getElementById('formStatus').textContent = '';
+    document.getElementById('formStatus').className = 'status';
+  }
+
+  document.getElementById('cancelEditBtn').addEventListener('click', resetForm);
+
+  function fillFormForEdit(p){
+    editingId = p.id;
+    document.getElementById('fName').value = p.name || '';
+    document.getElementById('fCategory').value = p.category || '';
+    document.getElementById('fImage').value = p.imageUrl || '';
+    document.getElementById('fDesc').value = p.desc || '';
+    document.getElementById('variantList').innerHTML = '';
+    (p.variants || []).forEach(function(v){ addVariantRow(v.label, v.price); });
+    if((p.variants || []).length === 0) addVariantRow('', '');
+    document.getElementById('formTitle').textContent = 'Edit Produk';
+    document.getElementById('submitBtn').textContent = 'Update Produk';
+    document.getElementById('cancelEditBtn').style.display = 'inline-block';
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+
+  document.getElementById('productForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    var statusEl = document.getElementById('formStatus');
+    var name = document.getElementById('fName').value.trim();
+    var category = document.getElementById('fCategory').value.trim();
+    var imageUrl = document.getElementById('fImage').value.trim();
+    var desc = document.getElementById('fDesc').value.trim();
+
+    var variants = [];
+    document.querySelectorAll('#variantList .variant-row').forEach(function(row){
+      var label = row.querySelector('.v-label').value.trim();
+      var price = parseInt(row.querySelector('.v-price').value, 10);
+      if(label && !isNaN(price)) variants.push({ label: label, price: price });
+    });
+
+    if(!name || !category || variants.length === 0){
+      statusEl.textContent = 'Isi nama, kategori, dan minimal 1 varian dengan harga.';
+      statusEl.className = 'status err';
+      return;
+    }
+
+    var data = {
+      name: name,
+      category: category,
+      imageUrl: imageUrl,
+      desc: desc,
+      variants: variants
+    };
+
+    var submitBtn = document.getElementById('submitBtn');
+    submitBtn.disabled = true;
+    statusEl.textContent = 'Menyimpan...';
+    statusEl.className = 'status';
+
+    var promise;
+    if(editingId){
+      promise = db.collection('products').doc(editingId).update(data);
+    } else {
+      data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+      promise = db.collection('products').add(data);
+    }
+
+    promise.then(function(){
+      statusEl.textContent = 'Tersimpan. Produk sudah update di shop.';
+      statusEl.className = 'status ok';
+      submitBtn.disabled = false;
+      resetForm();
+    }).catch(function(err){
+      console.error(err);
+      statusEl.textContent = 'Gagal simpan: ' + err.message;
+      statusEl.className = 'status err';
+      submitBtn.disabled = false;
+    });
+  });
+
+  function renderList(products){
+    var listEl = document.getElementById('productList');
+    if(products.length === 0){
+      listEl.innerHTML = '<div class="empty-msg">Belum ada produk. Tambahin lewat form di atas.</div>';
+      return;
+    }
+    listEl.innerHTML = '';
+    products.forEach(function(p){
+      var item = document.createElement('div');
+      item.className = 'list-item';
+      var initials = (p.name || '').split(' ').slice(0,2).map(function(w){return w[0];}).join('').toUpperCase();
+      var variantsText = (p.variants || []).map(function(v){
+        return v.label + ' (Rp' + Number(v.price).toLocaleString('id-ID') + ')';
+      }).join(', ');
+      item.innerHTML =
+        '<div class="list-thumb">' + (p.imageUrl ? '<img src="' + p.imageUrl + '" alt="">' : initials) + '</div>' +
+        '<div class="list-info">' +
+          '<h3>' + p.name + '</h3>' +
+          '<span class="cat mono">' + p.category + '</span>' +
+          '<div class="variants">' + variantsText + '</div>' +
+        '</div>' +
+        '<div class="list-btns">' +
+          '<button class="small-btn edit-btn">Edit</button>' +
+          '<button class="small-btn danger delete-btn">Hapus</button>' +
+        '</div>';
+      listEl.appendChild(item);
+      item.querySelector('.edit-btn').addEventListener('click', function(){ fillFormForEdit(p); });
+      item.querySelector('.delete-btn').addEventListener('click', function(){
+        if(confirm('Hapus produk "' + p.name + '"?')){
+          db.collection('products').doc(p.id).delete().catch(function(err){
+            alert('Gagal hapus: ' + err.message);
+          });
+        }
+      });
+    });
+  }
+
+  resetForm();
+})();
+</script>
+</body>
+</html>
