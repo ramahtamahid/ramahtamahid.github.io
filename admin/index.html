@@ -8,7 +8,6 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
 <style>
   :root{
     --ink:#3B6BA0;
@@ -234,6 +233,7 @@
               <img id="imagePreview" style="width:80px; height:80px; object-fit:cover; border-radius:2px; border:1px solid var(--ink-line);">
             </div>
             <div id="uploadStatus" style="font-size:0.8rem; margin-top:6px; color:var(--cream-dim);"></div>
+            <button type="button" id="ghTokenBtn" class="small-btn" style="margin-top:8px;">Atur Token GitHub</button>
           </div>
         </div>
         <div class="field">
@@ -282,7 +282,73 @@
   firebase.initializeApp(firebaseConfig);
   var db = firebase.firestore();
   var auth = firebase.auth();
-  var storage = firebase.storage();
+
+  var GH_OWNER = 'ramahtamahid';
+  var GH_REPO = 'ramahtamahid.github.io';
+  var GH_BRANCH = 'main';
+
+  var cachedGhToken = '';
+  function getGhToken(){ return cachedGhToken; }
+
+  function loadGhToken(){
+    return db.collection('settings').doc('github').get().then(function(doc){
+      cachedGhToken = doc.exists ? (doc.data().token || '') : '';
+      return cachedGhToken;
+    }).catch(function(err){
+      console.error('Gagal ambil token GitHub:', err);
+      return '';
+    });
+  }
+
+  document.getElementById('ghTokenBtn').addEventListener('click', function(){
+    var token = prompt('Masukkan GitHub Personal Access Token (scope: repo):', cachedGhToken);
+    if(token !== null){
+      var trimmed = token.trim();
+      db.collection('settings').doc('github').set({ token: trimmed }).then(function(){
+        cachedGhToken = trimmed;
+        alert('Token tersimpan — akan otomatis kepakai di browser/device manapun setelah login.');
+      }).catch(function(err){
+        alert('Gagal simpan token: ' + err.message);
+      });
+    }
+  });
+
+  function fileToBase64(file){
+    return new Promise(function(resolve, reject){
+      var reader = new FileReader();
+      reader.onload = function(){ resolve(reader.result.split(',')[1]); };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function uploadImageToGithub(file){
+    var token = getGhToken();
+    if(!token){
+      return Promise.reject(new Error('Token GitHub belum diatur. Klik "Atur Token GitHub" dulu.'));
+    }
+    var safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
+    var path = 'images/products/' + Date.now() + '_' + safeName;
+    return fileToBase64(file).then(function(base64){
+      return fetch('https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + path, {
+        method: 'PUT',
+        headers: {
+          'Authorization': 'Bearer ' + token,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          message: 'Upload foto produk: ' + safeName,
+          content: base64,
+          branch: GH_BRANCH
+        })
+      }).then(function(res){
+        if(!res.ok){
+          return res.json().then(function(err){ throw new Error(err.message || 'Gagal upload ke GitHub'); });
+        }
+        return '/' + path;
+      });
+    });
+  }
 
   var unsubscribeProducts = null;
 
@@ -307,6 +373,7 @@
       document.getElementById('adminApp').style.display = 'block';
       startProductListener();
       startOrdersListener();
+      loadGhToken();
     } else {
       document.getElementById('loginScreen').style.display = 'flex';
       document.getElementById('adminApp').style.display = 'none';
@@ -425,16 +492,12 @@
     var file = e.target.files[0];
     if(!file) return;
     var statusEl = document.getElementById('uploadStatus');
-    statusEl.textContent = 'Mengunggah gambar...';
-    var path = 'products/' + Date.now() + '_' + file.name;
-    var ref = storage.ref().child(path);
-    ref.put(file).then(function(snapshot){
-      return snapshot.ref.getDownloadURL();
-    }).then(function(url){
+    document.getElementById('imagePreview').src = URL.createObjectURL(file);
+    document.getElementById('imagePreviewWrap').style.display = 'block';
+    statusEl.textContent = 'Mengunggah gambar ke GitHub...';
+    uploadImageToGithub(file).then(function(url){
       document.getElementById('fImage').value = url;
-      document.getElementById('imagePreview').src = url;
-      document.getElementById('imagePreviewWrap').style.display = 'block';
-      statusEl.textContent = 'Gambar berhasil diunggah.';
+      statusEl.textContent = 'Gambar berhasil diunggah (butuh ~1 menit sebelum tampil di shop, nunggu GitHub Pages build ulang).';
     }).catch(function(err){
       console.error(err);
       statusEl.textContent = 'Gagal unggah gambar: ' + err.message;
