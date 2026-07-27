@@ -7,6 +7,8 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
 <style>
   :root{
     --ink:#3B6BA0;
@@ -225,8 +227,13 @@
             <input type="text" id="fCategory" required placeholder="mis. Roastbeans">
           </div>
           <div class="field">
-            <label>URL Gambar (opsional)</label>
-            <input type="text" id="fImage" placeholder="https://...">
+            <label>Gambar Produk</label>
+            <input type="file" id="fImageFile" accept="image/*">
+            <input type="hidden" id="fImage">
+            <div id="imagePreviewWrap" style="margin-top:10px; display:none;">
+              <img id="imagePreview" style="width:80px; height:80px; object-fit:cover; border-radius:2px; border:1px solid var(--ink-line);">
+            </div>
+            <div id="uploadStatus" style="font-size:0.8rem; margin-top:6px; color:var(--cream-dim);"></div>
           </div>
         </div>
         <div class="field">
@@ -275,6 +282,7 @@
   firebase.initializeApp(firebaseConfig);
   var db = firebase.firestore();
   var auth = firebase.auth();
+  var storage = firebase.storage();
 
   var unsubscribeProducts = null;
 
@@ -413,9 +421,32 @@
     addVariantRow('', '');
   });
 
+  document.getElementById('fImageFile').addEventListener('change', function(e){
+    var file = e.target.files[0];
+    if(!file) return;
+    var statusEl = document.getElementById('uploadStatus');
+    statusEl.textContent = 'Mengunggah gambar...';
+    var path = 'products/' + Date.now() + '_' + file.name;
+    var ref = storage.ref().child(path);
+    ref.put(file).then(function(snapshot){
+      return snapshot.ref.getDownloadURL();
+    }).then(function(url){
+      document.getElementById('fImage').value = url;
+      document.getElementById('imagePreview').src = url;
+      document.getElementById('imagePreviewWrap').style.display = 'block';
+      statusEl.textContent = 'Gambar berhasil diunggah.';
+    }).catch(function(err){
+      console.error(err);
+      statusEl.textContent = 'Gagal unggah gambar: ' + err.message;
+    });
+  });
+
   function resetForm(){
     editingId = null;
     document.getElementById('productForm').reset();
+    document.getElementById('fImage').value = '';
+    document.getElementById('imagePreviewWrap').style.display = 'none';
+    document.getElementById('uploadStatus').textContent = '';
     document.getElementById('variantList').innerHTML = '';
     addVariantRow('', '');
     document.getElementById('formTitle').textContent = 'Tambah Produk Baru';
@@ -432,6 +463,12 @@
     document.getElementById('fName').value = p.name || '';
     document.getElementById('fCategory').value = p.category || '';
     document.getElementById('fImage').value = p.imageUrl || '';
+    if(p.imageUrl){
+      document.getElementById('imagePreview').src = p.imageUrl;
+      document.getElementById('imagePreviewWrap').style.display = 'block';
+    } else {
+      document.getElementById('imagePreviewWrap').style.display = 'none';
+    }
     document.getElementById('fDesc').value = p.desc || '';
     document.getElementById('variantList').innerHTML = '';
     (p.variants || []).forEach(function(v){ addVariantRow(v.label, v.price); });
