@@ -322,30 +322,56 @@
     });
   }
 
+  function convertToWebp(file, maxDimension, quality){
+    return new Promise(function(resolve, reject){
+      var img = new Image();
+      var objectUrl = URL.createObjectURL(file);
+      img.onload = function(){
+        var w = img.naturalWidth, h = img.naturalHeight;
+        if(w > maxDimension || h > maxDimension){
+          if(w >= h){ h = Math.round(h * (maxDimension / w)); w = maxDimension; }
+          else { w = Math.round(w * (maxDimension / h)); h = maxDimension; }
+        }
+        var canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        canvas.toBlob(function(blob){
+          URL.revokeObjectURL(objectUrl);
+          if(!blob){ reject(new Error('Gagal konversi gambar ke WebP.')); return; }
+          resolve(blob);
+        }, 'image/webp', quality);
+      };
+      img.onerror = function(){ URL.revokeObjectURL(objectUrl); reject(new Error('Gagal memuat gambar.')); };
+      img.src = objectUrl;
+    });
+  }
+
   function uploadImageToGithub(file){
     var token = getGhToken();
     if(!token){
       return Promise.reject(new Error('Token GitHub belum diatur. Klik "Atur Token GitHub" dulu.'));
     }
-    var safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
-    var path = 'images/products/' + Date.now() + '_' + safeName;
-    return fileToBase64(file).then(function(base64){
-      return fetch('https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + path, {
-        method: 'PUT',
-        headers: {
-          'Authorization': 'Bearer ' + token,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          message: 'Upload foto produk: ' + safeName,
-          content: base64,
-          branch: GH_BRANCH
-        })
-      }).then(function(res){
-        if(!res.ok){
-          return res.json().then(function(err){ throw new Error(err.message || 'Gagal upload ke GitHub'); });
-        }
-        return '/' + path;
+    return convertToWebp(file, 1600, 0.82).then(function(webpBlob){
+      var baseName = file.name.replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9.\-_]/g, '_');
+      var path = 'images/products/' + Date.now() + '_' + baseName + '.webp';
+      return fileToBase64(webpBlob).then(function(base64){
+        return fetch('https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + path, {
+          method: 'PUT',
+          headers: {
+            'Authorization': 'Bearer ' + token,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            message: 'Upload foto produk: ' + baseName + '.webp',
+            content: base64,
+            branch: GH_BRANCH
+          })
+        }).then(function(res){
+          if(!res.ok){
+            return res.json().then(function(err){ throw new Error(err.message || 'Gagal upload ke GitHub'); });
+          }
+          return '/' + path;
+        });
       });
     });
   }
@@ -494,7 +520,7 @@
     var statusEl = document.getElementById('uploadStatus');
     document.getElementById('imagePreview').src = URL.createObjectURL(file);
     document.getElementById('imagePreviewWrap').style.display = 'block';
-    statusEl.textContent = 'Mengunggah gambar ke GitHub...';
+    statusEl.textContent = 'Mengompres ke WebP & mengunggah ke GitHub...';
     uploadImageToGithub(file).then(function(url){
       document.getElementById('fImage').value = url;
       statusEl.textContent = 'Gambar berhasil diunggah (butuh ~1 menit sebelum tampil di shop, nunggu GitHub Pages build ulang).';
