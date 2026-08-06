@@ -290,7 +290,6 @@
                   <img id="imagePreview" style="width:80px; height:80px; object-fit:cover; border-radius:2px; border:1px solid var(--ink-line);">
                 </div>
                 <div id="uploadStatus" style="font-size:0.8rem; margin-top:6px; color:var(--cream-dim);"></div>
-                <button type="button" id="ghTokenBtn" class="small-btn" style="margin-top:8px;">Atur Token GitHub</button>
               </div>
             </div>
             <div class="field">
@@ -348,35 +347,7 @@
   var db = firebase.firestore();
   var auth = firebase.auth();
 
-  var GH_OWNER = 'ramahtamahid';
-  var GH_REPO = 'ramahtamahid.github.io';
-  var GH_BRANCH = 'main';
-
-  var cachedGhToken = '';
-  function getGhToken(){ return cachedGhToken; }
-
-  function loadGhToken(){
-    return db.collection('settings').doc('github').get().then(function(doc){
-      cachedGhToken = doc.exists ? (doc.data().token || '') : '';
-      return cachedGhToken;
-    }).catch(function(err){
-      console.error('Gagal ambil token GitHub:', err);
-      return '';
-    });
-  }
-
-  document.getElementById('ghTokenBtn').addEventListener('click', function(){
-    var token = prompt('Masukkan GitHub Personal Access Token (scope: repo):', cachedGhToken);
-    if(token !== null){
-      var trimmed = token.trim();
-      db.collection('settings').doc('github').set({ token: trimmed }).then(function(){
-        cachedGhToken = trimmed;
-        alert('Token tersimpan — akan otomatis kepakai di browser/device manapun setelah login.');
-      }).catch(function(err){
-        alert('Gagal simpan token: ' + err.message);
-      });
-    }
-  });
+  var WORKER_URL = 'https://ramahtamah-api.rmtm-artisan.workers.dev';
 
   function fileToBase64(file){
     return new Promise(function(resolve, reject){
@@ -411,37 +382,29 @@
     });
   }
 
-  function uploadImageToGithub(file){
-    var token = getGhToken();
-    if(!token){
-      return Promise.reject(new Error('Token GitHub belum diatur. Klik "Atur Token GitHub" dulu.'));
-    }
+  function uploadImageToR2(file){
     return convertToWebp(file, 1600, 0.82).then(function(webpBlob){
       var baseName = file.name.replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9.\-_]/g, '_');
-      var path = 'images/products/' + Date.now() + '_' + baseName + '.webp';
+      var filename = baseName + '.webp';
       return fileToBase64(webpBlob).then(function(base64){
-        return fetch('https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + path, {
-          method: 'PUT',
-          headers: {
-            'Authorization': 'Bearer ' + token,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            message: 'Upload foto produk: ' + baseName + '.webp',
-            content: base64,
-            branch: GH_BRANCH
-          })
-        }).then(function(res){
-          if(!res.ok){
-            return res.json().then(function(err){ throw new Error(err.message || 'Gagal upload ke GitHub'); });
-          }
-          return '/' + path;
+        return auth.currentUser.getIdToken().then(function(idToken){
+          return fetch(WORKER_URL + '/upload', {
+            method: 'POST',
+            headers: {
+              'Authorization': 'Bearer ' + idToken,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ filename: filename, contentType: 'image/webp', base64: base64 })
+          }).then(function(res){
+            return res.json().then(function(data){
+              if(!res.ok) throw new Error(data.error || 'Gagal upload gambar');
+              return data.url;
+            });
+          });
         });
       });
     });
   }
-
-  var unsubscribeProducts = null;
 
   document.getElementById('loginForm').addEventListener('submit', function(e){
     e.preventDefault();
@@ -462,13 +425,11 @@
     if(user){
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('adminApp').style.display = 'block';
-      startProductListener();
+      loadProducts();
       startOrdersListener();
-      loadGhToken();
     } else {
       document.getElementById('loginScreen').style.display = 'flex';
       document.getElementById('adminApp').style.display = 'none';
-      if(unsubscribeProducts){ unsubscribeProducts(); unsubscribeProducts = null; }
       if(unsubscribeOrders){ unsubscribeOrders(); unsubscribeOrders = null; }
     }
   });
@@ -540,16 +501,13 @@
     });
   }
 
-  function startProductListener(){
-    if(unsubscribeProducts) return;
-    unsubscribeProducts = db.collection('products').orderBy('createdAt', 'desc').onSnapshot(function(snapshot){
-      var products = snapshot.docs.map(function(doc){
-        var data = doc.data();
-        data.id = doc.id;
-        return data;
-      });
+  function loadProducts(){
+    document.getElementById('productList').innerHTML = '<div class="empty-msg">Memuat produk...</div>';
+    fetch(WORKER_URL + '/products').then(function(res){
+      return res.json();
+    }).then(function(products){
       renderList(products);
-    }, function(err){
+    }).catch(function(err){
       console.error('Gagal ambil produk:', err);
       document.getElementById('productList').innerHTML = '<div class="empty-msg">Gagal memuat produk: ' + err.message + '</div>';
     });
@@ -586,7 +544,7 @@
     document.getElementById('imagePreview').src = URL.createObjectURL(file);
     document.getElementById('imagePreviewWrap').style.display = 'block';
     statusEl.textContent = 'Mengompres ke WebP & mengunggah ke GitHub...';
-    uploadImageToGithub(file).then(function(url){
+    uploadImageToR2(file).then(function(url){
       document.getElementById('fImage').value = url;
       statusEl.textContent = 'Gambar berhasil diunggah (butuh ~1 menit sebelum tampil di shop, nunggu GitHub Pages build ulang).';
     }).catch(function(err){
@@ -623,7 +581,7 @@
     } else {
       document.getElementById('imagePreviewWrap').style.display = 'none';
     }
-    document.getElementById('fDesc').value = p.desc || '';
+    document.getElementById('fDesc').value = p.description || '';
     document.getElementById('variantList').innerHTML = '';
     (p.variants || []).forEach(function(v){ addVariantRow(v.label, v.price); });
     if((p.variants || []).length === 0) addVariantRow('', '');
@@ -658,7 +616,7 @@
       name: name,
       category: category,
       imageUrl: imageUrl,
-      desc: desc,
+      description: desc,
       variants: variants
     };
 
@@ -667,19 +625,25 @@
     statusEl.textContent = 'Menyimpan...';
     statusEl.className = 'status';
 
-    var promise;
-    if(editingId){
-      promise = db.collection('products').doc(editingId).update(data);
-    } else {
-      data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
-      promise = db.collection('products').add(data);
-    }
-
-    promise.then(function(){
+    auth.currentUser.getIdToken().then(function(idToken){
+      var endpoint = editingId ? (WORKER_URL + '/products/' + editingId) : (WORKER_URL + '/products');
+      var method = editingId ? 'PUT' : 'POST';
+      return fetch(endpoint, {
+        method: method,
+        headers: { 'Authorization': 'Bearer ' + idToken, 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      }).then(function(res){
+        return res.json().then(function(resData){
+          if(!res.ok) throw new Error(resData.error || 'Gagal simpan produk');
+          return resData;
+        });
+      });
+    }).then(function(){
       statusEl.textContent = 'Tersimpan. Produk sudah update di shop.';
       statusEl.className = 'status ok';
       submitBtn.disabled = false;
       resetForm();
+      loadProducts();
     }).catch(function(err){
       console.error(err);
       statusEl.textContent = 'Gagal simpan: ' + err.message;
@@ -717,7 +681,15 @@
       item.querySelector('.edit-btn').addEventListener('click', function(){ fillFormForEdit(p); });
       item.querySelector('.delete-btn').addEventListener('click', function(){
         if(confirm('Hapus produk "' + p.name + '"?')){
-          db.collection('products').doc(p.id).delete().catch(function(err){
+          auth.currentUser.getIdToken().then(function(idToken){
+            return fetch(WORKER_URL + '/products/' + p.id, {
+              method: 'DELETE',
+              headers: { 'Authorization': 'Bearer ' + idToken }
+            });
+          }).then(function(res){
+            if(!res.ok) throw new Error('Gagal hapus produk');
+            loadProducts();
+          }).catch(function(err){
             alert('Gagal hapus: ' + err.message);
           });
         }
