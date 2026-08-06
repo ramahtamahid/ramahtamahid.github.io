@@ -348,6 +348,7 @@
   };
   firebase.initializeApp(firebaseConfig);
   var db = firebase.firestore();
+  var WORKER_URL = 'https://ramahtamah-api.rmtm-artisan.workers.dev';
 
   var PRODUCTS = [];
   // ====== EDIT NOMOR REKENING / WA DI SINI ======
@@ -419,7 +420,7 @@
           '<div class="card-body">' +
             '<div class="card-top"><span class="mono">' + p.category + '</span></div>' +
             '<h3>' + p.name + '</h3>' +
-            '<p class="desc">' + p.desc + '</p>' +
+            '<p class="desc">' + (p.description || '') + '</p>' +
             '<div class="variant-row">' + pillsHtml + '</div>' +
             '<div class="card-foot">' +
               '<span class="price">' + rupiah(variant.price) + '</span>' +
@@ -696,17 +697,15 @@
     renderDrawer();
   });
 
-  db.collection('products').orderBy('createdAt', 'desc').onSnapshot(function(snapshot){
-    PRODUCTS = snapshot.docs.map(function(doc){
-      var data = doc.data();
-      data.id = doc.id;
-      return data;
-    });
+  fetch(WORKER_URL + '/products').then(function(res){
+    return res.json();
+  }).then(function(products){
+    PRODUCTS = products;
     productsLoading = false;
     currentPage = 1;
     renderGrid();
-  }, function(err){
-    console.error('Gagal ambil produk dari Firestore:', err);
+  }).catch(function(err){
+    console.error('Gagal ambil produk:', err);
     productsLoading = false;
     renderGrid();
   });
