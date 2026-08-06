@@ -44,22 +44,52 @@
   }
   .wrap{max-width:960px; margin:0 auto; padding:0 24px;}
 
-  header{
+  .app-shell{display:flex; min-height:100vh;}
+
+  .sidebar{
+    width:230px; flex-shrink:0;
     background:var(--blue-deep);
-    padding:16px 0;
+    border-right:1px solid var(--ink-line);
+    display:flex; flex-direction:column;
+    position:sticky; top:0; height:100vh;
+  }
+  .sidebar-brand{
+    display:flex; align-items:center; gap:10px;
+    padding:22px 20px;
     border-bottom:1px solid var(--ink-line);
   }
-  header .wrap{display:flex; align-items:center; justify-content:space-between;}
-  .brand{display:flex; align-items:center; gap:12px;}
   .logo-img{height:24px; width:auto;}
-  .brand strong{color:var(--text-strong); font-family:Georgia,serif; font-size:1.05rem;}
+  .sidebar-brand strong{color:var(--text-strong); font-family:Georgia,serif; font-size:1.05rem;}
+
+  .sidebar-nav{flex:1; padding:16px 12px; display:flex; flex-direction:column; gap:4px;}
+  .nav-item{
+    display:flex; align-items:center; gap:10px;
+    background:transparent; border:none; text-align:left;
+    color:var(--cream-dim); font-size:0.92rem;
+    padding:11px 12px; border-radius:3px;
+  }
+  .nav-item:hover{background:rgba(238,244,251,0.06); color:var(--text-strong);}
+  .nav-item.active{background:var(--ink-soft); color:var(--text-strong); font-weight:600;}
+  .nav-dot{width:6px; height:6px; border-radius:50%; background:currentColor; opacity:0.6; flex-shrink:0;}
+  .nav-item.active .nav-dot{opacity:1;}
+
+  .sidebar-footer{
+    padding:16px 20px 22px;
+    border-top:1px solid var(--ink-line);
+    display:flex; flex-direction:column; gap:10px;
+  }
   .shop-link{
     font-size:0.85rem; color:var(--cream-dim);
     border:1px solid var(--ink-line); padding:8px 14px; border-radius:2px;
+    display:inline-block;
   }
   .shop-link:hover{color:var(--text-strong); border-color:var(--text-strong);}
 
-  main{padding:40px 0 80px;}
+  main{flex:1; min-width:0; padding:40px 0 80px;}
+  .content-wrap{max-width:760px; margin:0 auto; padding:0 32px;}
+
+  .tab-panel{display:none;}
+  .tab-panel.active{display:block;}
 
   .panel{
     background:var(--ink-soft);
@@ -139,6 +169,21 @@
 
   .empty-msg{color:var(--cream-dim); font-size:0.9rem; padding:20px 0; text-align:center;}
 
+  @media(max-width:760px){
+    .app-shell{flex-direction:column;}
+    .sidebar{
+      width:100%; height:auto; position:sticky; top:0; z-index:10;
+      flex-direction:row; align-items:center;
+      overflow-x:auto;
+    }
+    .sidebar-brand{border-bottom:none; border-right:1px solid var(--ink-line); flex-shrink:0;}
+    .sidebar-nav{flex-direction:row; padding:10px;}
+    .nav-item{white-space:nowrap;}
+    .sidebar-footer{border-top:none; flex-direction:row; padding:10px 16px;}
+    .content-wrap{padding:0 20px;}
+    .row2{grid-template-columns:1fr;}
+  }
+
   .order-item{padding:16px 0; border-bottom:1px solid var(--ink-line);}
   .order-item:last-child{border-bottom:none;}
   .order-top{display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px;}
@@ -197,74 +242,94 @@
 </div>
 
 <div id="adminApp">
-<header>
-  <div class="wrap">
-    <div class="brand">
+<div class="app-shell">
+
+  <aside class="sidebar">
+    <div class="sidebar-brand">
       <img src="/images/logo.png" alt="Ramah Tamah" class="logo-img">
-      <strong>Admin Produk</strong>
+      <strong>Admin</strong>
     </div>
-    <div style="display:flex; gap:10px; align-items:center;">
+    <nav class="sidebar-nav">
+      <button class="nav-item active" data-tab="tambah">
+        <span class="nav-dot"></span> Tambah Produk
+      </button>
+      <button class="nav-item" data-tab="pesanan">
+        <span class="nav-dot"></span> Pesanan Online
+      </button>
+      <button class="nav-item" data-tab="produk">
+        <span class="nav-dot"></span> Produk Aktif
+      </button>
+    </nav>
+    <div class="sidebar-footer">
       <a href="/shop/" class="shop-link">Lihat Shop &rarr;</a>
-      <button class="shop-link" id="logoutBtn" style="border:none; background:transparent;">Keluar</button>
+      <button class="shop-link" id="logoutBtn" style="border:none; background:transparent; text-align:left;">Keluar</button>
     </div>
-  </div>
-</header>
+  </aside>
 
-<main>
-  <div class="wrap">
+  <main>
+    <div class="content-wrap">
 
-    <div class="panel">
-      <h2 id="formTitle">Tambah Produk Baru</h2>
-      <form id="productForm">
-        <div class="field">
-          <label>Nama Produk</label>
-          <input type="text" id="fName" required placeholder="mis. Roastbeans SO Manglayang Red Honey">
-        </div>
-        <div class="row2">
-          <div class="field">
-            <label>Kategori</label>
-            <input type="text" id="fCategory" required placeholder="mis. Roastbeans">
-          </div>
-          <div class="field">
-            <label>Gambar Produk</label>
-            <input type="file" id="fImageFile" accept="image/*">
-            <input type="hidden" id="fImage">
-            <div id="imagePreviewWrap" style="margin-top:10px; display:none;">
-              <img id="imagePreview" style="width:80px; height:80px; object-fit:cover; border-radius:2px; border:1px solid var(--ink-line);">
+      <section class="tab-panel active" data-panel="tambah">
+        <div class="panel">
+          <h2 id="formTitle">Tambah Produk Baru</h2>
+          <form id="productForm">
+            <div class="field">
+              <label>Nama Produk</label>
+              <input type="text" id="fName" required placeholder="mis. Roastbeans SO Manglayang Red Honey">
             </div>
-            <div id="uploadStatus" style="font-size:0.8rem; margin-top:6px; color:var(--cream-dim);"></div>
-            <button type="button" id="ghTokenBtn" class="small-btn" style="margin-top:8px;">Atur Token GitHub</button>
-          </div>
+            <div class="row2">
+              <div class="field">
+                <label>Kategori</label>
+                <input type="text" id="fCategory" required placeholder="mis. Roastbeans">
+              </div>
+              <div class="field">
+                <label>Gambar Produk</label>
+                <input type="file" id="fImageFile" accept="image/*">
+                <input type="hidden" id="fImage">
+                <div id="imagePreviewWrap" style="margin-top:10px; display:none;">
+                  <img id="imagePreview" style="width:80px; height:80px; object-fit:cover; border-radius:2px; border:1px solid var(--ink-line);">
+                </div>
+                <div id="uploadStatus" style="font-size:0.8rem; margin-top:6px; color:var(--cream-dim);"></div>
+                <button type="button" id="ghTokenBtn" class="small-btn" style="margin-top:8px;">Atur Token GitHub</button>
+              </div>
+            </div>
+            <div class="field">
+              <label>Deskripsi Singkat</label>
+              <textarea id="fDesc" placeholder="Deskripsi produk yang tampil di kartu shop"></textarea>
+            </div>
+
+            <label style="display:block; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--cream-dim); margin-bottom:8px;">Varian &amp; Harga</label>
+            <div id="variantList"></div>
+            <button type="button" class="add-variant-btn" id="addVariantBtn">+ Tambah Varian</button>
+
+            <div class="actions">
+              <button type="submit" class="btn btn-primary" id="submitBtn">Simpan Produk</button>
+              <button type="button" class="btn btn-ghost" id="cancelEditBtn" style="display:none;">Batal Edit</button>
+            </div>
+            <div class="status" id="formStatus"></div>
+          </form>
         </div>
-        <div class="field">
-          <label>Deskripsi Singkat</label>
-          <textarea id="fDesc" placeholder="Deskripsi produk yang tampil di kartu shop"></textarea>
+      </section>
+
+      <section class="tab-panel" data-panel="pesanan">
+        <div class="panel">
+          <h2>Pesanan Online</h2>
+          <div id="orderList"><div class="empty-msg">Memuat pesanan...</div></div>
         </div>
+      </section>
 
-        <label style="display:block; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--cream-dim); margin-bottom:8px;">Varian &amp; Harga</label>
-        <div id="variantList"></div>
-        <button type="button" class="add-variant-btn" id="addVariantBtn">+ Tambah Varian</button>
-
-        <div class="actions">
-          <button type="submit" class="btn btn-primary" id="submitBtn">Simpan Produk</button>
-          <button type="button" class="btn btn-ghost" id="cancelEditBtn" style="display:none;">Batal Edit</button>
+      <section class="tab-panel" data-panel="produk">
+        <div class="panel">
+          <h2>Produk Aktif</h2>
+          <div id="productList"><div class="empty-msg">Memuat produk...</div></div>
         </div>
-        <div class="status" id="formStatus"></div>
-      </form>
-    </div>
+      </section>
 
-    <div class="panel">
-      <h2>Pesanan Online</h2>
-      <div id="orderList"><div class="empty-msg">Memuat pesanan...</div></div>
     </div>
+  </main>
 
-    <div class="panel">
-      <h2>Produk Aktif</h2>
-      <div id="productList"><div class="empty-msg">Memuat produk...</div></div>
-    </div>
+</div>
 
-  </div>
-</main>
 </div>
 
 <script>
@@ -661,6 +726,16 @@
   }
 
   resetForm();
+
+  document.querySelectorAll('.nav-item').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var tab = btn.dataset.tab;
+      document.querySelectorAll('.nav-item').forEach(function(b){ b.classList.remove('active'); });
+      document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });
+      btn.classList.add('active');
+      document.querySelector('.tab-panel[data-panel="' + tab + '"]').classList.add('active');
+    });
+  });
 })();
 </script>
 </body>
