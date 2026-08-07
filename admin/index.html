@@ -546,7 +546,7 @@
     statusEl.textContent = 'Mengompres ke WebP & mengunggah ke GitHub...';
     uploadImageToR2(file).then(function(url){
       document.getElementById('fImage').value = url;
-      statusEl.textContent = 'Gambar berhasil diunggah (butuh ~1 menit sebelum tampil di shop, nunggu GitHub Pages build ulang).';
+      statusEl.textContent = 'Gambar berhasil diunggah.';
     }).catch(function(err){
       console.error(err);
       statusEl.textContent = 'Gagal unggah gambar: ' + err.message;
@@ -588,6 +588,8 @@
     document.getElementById('formTitle').textContent = 'Edit Produk';
     document.getElementById('submitBtn').textContent = 'Update Produk';
     document.getElementById('cancelEditBtn').style.display = 'inline-block';
+    var tambahNav = document.querySelector('.nav-item[data-tab="tambah"]');
+    if(tambahNav) tambahNav.click();
     window.scrollTo({top:0, behavior:'smooth'});
   }
 
