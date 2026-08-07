@@ -116,6 +116,23 @@
   .field textarea{resize:vertical; min-height:70px;}
   .row2{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
 
+  .checkbox-group{display:flex; flex-wrap:wrap; gap:10px;}
+  .checkbox-pill{
+    display:flex; align-items:center; gap:8px;
+    padding:9px 14px; border:1px solid var(--ink-line); border-radius:20px;
+    font-size:0.88rem; color:var(--cream-dim); cursor:pointer;
+    background:rgba(238,244,251,0.04);
+  }
+  .checkbox-pill input{width:auto; margin:0;}
+  .checkbox-pill:has(input:checked){
+    background:var(--text-strong); color:var(--blue-deep); border-color:var(--text-strong); font-weight:600;
+  }
+  .variant-check-list{display:flex; flex-direction:column; gap:10px;}
+  .variant-check-row{display:flex; align-items:center; gap:14px;}
+  .variant-check-row .checkbox-pill{width:110px; flex-shrink:0; justify-content:center;}
+  .variant-check-row .var-price{flex:1; padding:9px 12px;}
+  .variant-check-row .var-price:disabled{opacity:0.4;}
+
   .variant-row{
     display:grid; grid-template-columns:1fr 140px 40px; gap:10px; margin-bottom:10px; align-items:center;
   }
@@ -250,14 +267,11 @@
       <strong>Admin</strong>
     </div>
     <nav class="sidebar-nav">
-      <button class="nav-item active" data-tab="tambah">
-        <span class="nav-dot"></span> Tambah Produk
-      </button>
       <button class="nav-item" data-tab="pesanan">
         <span class="nav-dot"></span> Pesanan Online
       </button>
-      <button class="nav-item" data-tab="produk">
-        <span class="nav-dot"></span> Produk Aktif
+      <button class="nav-item active" data-tab="produk">
+        <span class="nav-dot"></span> Produk
       </button>
     </nav>
     <div class="sidebar-footer">
@@ -269,7 +283,14 @@
   <main>
     <div class="content-wrap">
 
-      <section class="tab-panel active" data-panel="tambah">
+      <section class="tab-panel" data-panel="pesanan">
+        <div class="panel">
+          <h2>Pesanan Online</h2>
+          <div id="orderList"><div class="empty-msg">Memuat pesanan...</div></div>
+        </div>
+      </section>
+
+      <section class="tab-panel active" data-panel="produk">
         <div class="panel">
           <h2 id="formTitle">Tambah Produk Baru</h2>
           <form id="productForm">
@@ -277,29 +298,49 @@
               <label>Nama Produk</label>
               <input type="text" id="fName" required placeholder="mis. Roastbeans SO Manglayang Red Honey">
             </div>
-            <div class="row2">
-              <div class="field">
-                <label>Kategori</label>
-                <input type="text" id="fCategory" required placeholder="mis. Roastbeans">
+            <div class="field">
+              <label>Kategori</label>
+              <div class="checkbox-group" id="categoryGroup">
+                <label class="checkbox-pill"><input type="checkbox" class="cat-check" value="Roastbeans"> Roastbeans</label>
+                <label class="checkbox-pill"><input type="checkbox" class="cat-check" value="Artisan Tea"> Artisan Tea</label>
+                <label class="checkbox-pill"><input type="checkbox" class="cat-check" value="Condiment"> Condiment</label>
               </div>
-              <div class="field">
-                <label>Gambar Produk</label>
-                <input type="file" id="fImageFile" accept="image/*">
-                <input type="hidden" id="fImage">
-                <div id="imagePreviewWrap" style="margin-top:10px; display:none;">
-                  <img id="imagePreview" style="width:80px; height:80px; object-fit:cover; border-radius:2px; border:1px solid var(--ink-line);">
-                </div>
-                <div id="uploadStatus" style="font-size:0.8rem; margin-top:6px; color:var(--cream-dim);"></div>
+            </div>
+            <div class="field">
+              <label>Gambar Produk</label>
+              <input type="file" id="fImageFile" accept="image/*">
+              <input type="hidden" id="fImage">
+              <div id="imagePreviewWrap" style="margin-top:10px; display:none;">
+                <img id="imagePreview" style="width:80px; height:80px; object-fit:cover; border-radius:2px; border:1px solid var(--ink-line);">
               </div>
+              <div id="uploadStatus" style="font-size:0.8rem; margin-top:6px; color:var(--cream-dim);"></div>
             </div>
             <div class="field">
               <label>Deskripsi Singkat</label>
               <textarea id="fDesc" placeholder="Deskripsi produk yang tampil di kartu shop"></textarea>
             </div>
 
-            <label style="display:block; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--cream-dim); margin-bottom:8px;">Varian &amp; Harga</label>
-            <div id="variantList"></div>
-            <button type="button" class="add-variant-btn" id="addVariantBtn">+ Tambah Varian</button>
+            <div class="field">
+              <label>Varian &amp; Harga</label>
+              <div class="variant-check-list" id="variantCheckList">
+                <div class="variant-check-row">
+                  <label class="checkbox-pill"><input type="checkbox" class="var-check" value="50gr"> 50gr</label>
+                  <input type="number" class="var-price" placeholder="Harga" disabled>
+                </div>
+                <div class="variant-check-row">
+                  <label class="checkbox-pill"><input type="checkbox" class="var-check" value="100gr"> 100gr</label>
+                  <input type="number" class="var-price" placeholder="Harga" disabled>
+                </div>
+                <div class="variant-check-row">
+                  <label class="checkbox-pill"><input type="checkbox" class="var-check" value="150gr"> 150gr</label>
+                  <input type="number" class="var-price" placeholder="Harga" disabled>
+                </div>
+                <div class="variant-check-row">
+                  <label class="checkbox-pill"><input type="checkbox" class="var-check" value="200gr"> 200gr</label>
+                  <input type="number" class="var-price" placeholder="Harga" disabled>
+                </div>
+              </div>
+            </div>
 
             <div class="actions">
               <button type="submit" class="btn btn-primary" id="submitBtn">Simpan Produk</button>
@@ -308,16 +349,7 @@
             <div class="status" id="formStatus"></div>
           </form>
         </div>
-      </section>
 
-      <section class="tab-panel" data-panel="pesanan">
-        <div class="panel">
-          <h2>Pesanan Online</h2>
-          <div id="orderList"><div class="empty-msg">Memuat pesanan...</div></div>
-        </div>
-      </section>
-
-      <section class="tab-panel" data-panel="produk">
         <div class="panel">
           <h2>Produk Aktif</h2>
           <div id="productList"><div class="empty-msg">Memuat produk...</div></div>
@@ -514,27 +546,24 @@
   }
 
   var editingId = null;
-  var variantCount = 0;
 
-  function uid(){ return Math.random().toString(36).slice(2, 8); }
-
-  function addVariantRow(label, price){
-    variantCount++;
-    var row = document.createElement('div');
-    row.className = 'variant-row';
-    row.dataset.rowId = uid();
-    row.innerHTML =
-      '<input type="text" class="v-label" placeholder="mis. 100gr" value="' + (label || '') + '">' +
-      '<input type="number" class="v-price" placeholder="Harga" value="' + (price != null ? price : '') + '">' +
-      '<button type="button" class="icon-btn remove-variant">&times;</button>';
-    document.getElementById('variantList').appendChild(row);
-    row.querySelector('.remove-variant').addEventListener('click', function(){
-      row.remove();
+  document.querySelectorAll('.cat-check').forEach(function(cb){
+    cb.addEventListener('change', function(){
+      if(cb.checked){
+        document.querySelectorAll('.cat-check').forEach(function(other){
+          if(other !== cb) other.checked = false;
+        });
+      }
     });
-  }
+  });
 
-  document.getElementById('addVariantBtn').addEventListener('click', function(){
-    addVariantRow('', '');
+  document.querySelectorAll('.variant-check-row').forEach(function(row){
+    var check = row.querySelector('.var-check');
+    var priceInput = row.querySelector('.var-price');
+    check.addEventListener('change', function(){
+      priceInput.disabled = !check.checked;
+      if(!check.checked) priceInput.value = '';
+    });
   });
 
   document.getElementById('fImageFile').addEventListener('change', function(e){
@@ -559,8 +588,13 @@
     document.getElementById('fImage').value = '';
     document.getElementById('imagePreviewWrap').style.display = 'none';
     document.getElementById('uploadStatus').textContent = '';
-    document.getElementById('variantList').innerHTML = '';
-    addVariantRow('', '');
+    document.querySelectorAll('.cat-check').forEach(function(cb){ cb.checked = false; });
+    document.querySelectorAll('.variant-check-row').forEach(function(row){
+      row.querySelector('.var-check').checked = false;
+      var priceInput = row.querySelector('.var-price');
+      priceInput.value = '';
+      priceInput.disabled = true;
+    });
     document.getElementById('formTitle').textContent = 'Tambah Produk Baru';
     document.getElementById('submitBtn').textContent = 'Simpan Produk';
     document.getElementById('cancelEditBtn').style.display = 'none';
@@ -573,7 +607,9 @@
   function fillFormForEdit(p){
     editingId = p.id;
     document.getElementById('fName').value = p.name || '';
-    document.getElementById('fCategory').value = p.category || '';
+    document.querySelectorAll('.cat-check').forEach(function(cb){
+      cb.checked = (cb.value === p.category);
+    });
     document.getElementById('fImage').value = p.imageUrl || '';
     if(p.imageUrl){
       document.getElementById('imagePreview').src = p.imageUrl;
@@ -582,30 +618,43 @@
       document.getElementById('imagePreviewWrap').style.display = 'none';
     }
     document.getElementById('fDesc').value = p.description || '';
-    document.getElementById('variantList').innerHTML = '';
-    (p.variants || []).forEach(function(v){ addVariantRow(v.label, v.price); });
-    if((p.variants || []).length === 0) addVariantRow('', '');
+    document.querySelectorAll('.variant-check-row').forEach(function(row){
+      var check = row.querySelector('.var-check');
+      var priceInput = row.querySelector('.var-price');
+      var match = (p.variants || []).find(function(v){ return v.label === check.value; });
+      if(match){
+        check.checked = true;
+        priceInput.disabled = false;
+        priceInput.value = match.price;
+      } else {
+        check.checked = false;
+        priceInput.disabled = true;
+        priceInput.value = '';
+      }
+    });
     document.getElementById('formTitle').textContent = 'Edit Produk';
     document.getElementById('submitBtn').textContent = 'Update Produk';
     document.getElementById('cancelEditBtn').style.display = 'inline-block';
-    var tambahNav = document.querySelector('.nav-item[data-tab="tambah"]');
-    if(tambahNav) tambahNav.click();
-    window.scrollTo({top:0, behavior:'smooth'});
+    document.getElementById('formTitle').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   document.getElementById('productForm').addEventListener('submit', function(e){
     e.preventDefault();
     var statusEl = document.getElementById('formStatus');
     var name = document.getElementById('fName').value.trim();
-    var category = document.getElementById('fCategory').value.trim();
+    var category = '';
+    var catChecked = document.querySelector('.cat-check:checked');
+    if(catChecked) category = catChecked.value;
+
     var imageUrl = document.getElementById('fImage').value.trim();
     var desc = document.getElementById('fDesc').value.trim();
 
     var variants = [];
-    document.querySelectorAll('#variantList .variant-row').forEach(function(row){
-      var label = row.querySelector('.v-label').value.trim();
-      var price = parseInt(row.querySelector('.v-price').value, 10);
-      if(label && !isNaN(price)) variants.push({ label: label, price: price });
+    document.querySelectorAll('.variant-check-row').forEach(function(row){
+      var check = row.querySelector('.var-check');
+      var priceInput = row.querySelector('.var-price');
+      var price = parseInt(priceInput.value, 10);
+      if(check.checked && !isNaN(price)) variants.push({ label: check.value, price: price });
     });
 
     if(!name || !category || variants.length === 0){
