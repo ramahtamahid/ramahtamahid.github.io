@@ -122,6 +122,7 @@
   .card{
     background:var(--ink-soft); border:1px solid var(--ink-line);
     display:flex; flex-direction:column; overflow:hidden;
+    cursor:pointer;
   }
   .card-swatch{
     height:150px;
@@ -135,7 +136,7 @@
     display:flex; align-items:center; justify-content:center;
     font-family:Georgia, serif; font-weight:700; color:#FFFFFF; font-size:1.1rem;
   }
-  .card-swatch img{width:100%; height:100%; object-fit:cover;}
+  .card-swatch img{width:100%; height:100%; object-fit:contain;}
   .grid-msg{
     grid-column:1/-1; text-align:center; padding:60px 10px; color:var(--cream-dim);
   }
@@ -225,6 +226,50 @@
   .drawer-btn:hover{background:var(--amber-hover);}
   .drawer-btn.secondary{background:none; border:1px solid var(--ink-line); color:var(--text-strong); margin-top:10px;}
   .drawer-btn:disabled{opacity:0.4; cursor:not-allowed;}
+
+  /* PRODUCT DETAIL MODAL */
+  .detail-modal{
+    position:fixed; top:50%; left:50%;
+    transform:translate(-50%, -48%) scale(0.97);
+    width:100%; max-width:760px; max-height:88vh;
+    background:var(--ink-soft);
+    border:1px solid var(--ink-line);
+    border-radius:4px;
+    z-index:71;
+    opacity:0; pointer-events:none;
+    transition:opacity 0.22s ease, transform 0.22s ease;
+    overflow-y:auto;
+  }
+  .detail-modal.open{opacity:1; pointer-events:auto; transform:translate(-50%, -50%) scale(1);}
+  .detail-close{
+    position:absolute; top:16px; right:16px; z-index:2;
+    background:var(--blue-deep); width:34px; height:34px; border-radius:50%;
+  }
+  .detail-body{display:grid; grid-template-columns:1fr 1fr;}
+  .detail-img{
+    background:
+      repeating-linear-gradient(135deg, rgba(238,244,251,0.06) 0px, rgba(238,244,251,0.06) 2px, transparent 2px, transparent 20px);
+    display:flex; align-items:center; justify-content:center;
+    min-height:280px; padding:20px;
+  }
+  .detail-img img{width:100%; height:100%; max-height:400px; object-fit:contain;}
+  .detail-img span{
+    width:120px; height:120px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-family:Georgia,serif; font-weight:700; color:#FFFFFF; font-size:2rem;
+  }
+  .detail-info{padding:40px 32px; display:flex; flex-direction:column;}
+  .detail-info .mono{color:var(--blue); margin-bottom:10px;}
+  .detail-info h2{font-size:1.5rem; margin-bottom:14px;}
+  .detail-info .desc{color:var(--cream-dim); font-size:0.95rem; line-height:1.6; margin-bottom:22px;}
+  .detail-info .price{font-family:Georgia,serif; font-size:1.4rem; color:var(--text-strong); margin:18px 0;}
+
+  @media(max-width:680px){
+    .detail-modal{max-width:94vw; max-height:90vh;}
+    .detail-body{grid-template-columns:1fr;}
+    .detail-img{min-height:220px;}
+    .detail-info{padding:28px 22px;}
+  }
 
   /* CHECKOUT FORM */
   .field{margin-bottom:16px;}
@@ -333,6 +378,13 @@
   <div class="drawer-foot" id="drawerFoot"></div>
 </aside>
 
+<!-- PRODUCT DETAIL MODAL -->
+<div class="overlay" id="detailOverlay"></div>
+<div class="detail-modal" id="detailModal">
+  <button class="drawer-close detail-close" id="closeDetail">&times;</button>
+  <div class="detail-body" id="detailBody"></div>
+</div>
+
 <script>
 (function(){
   "use strict";
@@ -415,7 +467,7 @@
         return '<button class="variant-pill' + (i === vIdx ? ' active' : '') + '" data-pid="' + p.id + '" data-vidx="' + i + '">' + v.label + '</button>';
       }).join('');
       return (
-        '<div class="card">' +
+        '<div class="card" data-pid="' + p.id + '">' +
           '<div class="card-swatch">' + (p.imageUrl ? '<img src="' + p.imageUrl + '" alt="' + p.name + '">' : '<span style="background:' + swatchColor(p.category) + '">' + initials(p.name) + '</span>') + '</div>' +
           '<div class="card-body">' +
             '<div class="card-top"><span class="mono">' + p.category + '</span></div>' +
@@ -490,6 +542,57 @@
         aBtn.textContent = '+ Keranjang';
         aBtn.classList.remove('added');
       }, 900);
+      return;
+    }
+    var card = e.target.closest('.card');
+    if(card){
+      openDetail(card.dataset.pid);
+    }
+  });
+
+  function openDetail(pid){
+    var p = PRODUCTS.find(function(x){ return x.id === pid; });
+    if(!p) return;
+    if(selectedVariant[p.id] === undefined) selectedVariant[p.id] = 0;
+    var vIdx = selectedVariant[p.id];
+    var variant = p.variants[vIdx];
+    var pillsHtml = p.variants.map(function(v, i){
+      return '<button class="variant-pill' + (i === vIdx ? ' active' : '') + '" data-pid="' + p.id + '" data-vidx="' + i + '">' + v.label + '</button>';
+    }).join('');
+    document.getElementById('detailBody').innerHTML =
+      '<div class="detail-img">' + (p.imageUrl ? '<img src="' + p.imageUrl + '" alt="' + p.name + '">' : '<span style="background:' + swatchColor(p.category) + '">' + initials(p.name) + '</span>') + '</div>' +
+      '<div class="detail-info">' +
+        '<span class="mono">' + p.category + '</span>' +
+        '<h2>' + p.name + '</h2>' +
+        '<p class="desc">' + (p.description || '') + '</p>' +
+        '<div class="variant-row">' + pillsHtml + '</div>' +
+        '<div class="price">' + rupiah(variant.price) + '</div>' +
+        '<button class="drawer-btn" data-pid="' + p.id + '">+ Tambah ke Keranjang</button>' +
+      '</div>';
+    document.getElementById('detailOverlay').classList.add('open');
+    document.getElementById('detailModal').classList.add('open');
+  }
+
+  function closeDetail(){
+    document.getElementById('detailOverlay').classList.remove('open');
+    document.getElementById('detailModal').classList.remove('open');
+  }
+  document.getElementById('closeDetail').addEventListener('click', closeDetail);
+  document.getElementById('detailOverlay').addEventListener('click', closeDetail);
+
+  document.getElementById('detailBody').addEventListener('click', function(e){
+    var vBtn = e.target.closest('.variant-pill');
+    if(vBtn){
+      selectedVariant[vBtn.dataset.pid] = parseInt(vBtn.dataset.vidx, 10);
+      openDetail(vBtn.dataset.pid);
+      renderGrid();
+      return;
+    }
+    var aBtn = e.target.closest('.drawer-btn');
+    if(aBtn){
+      addToCart(aBtn.dataset.pid);
+      aBtn.textContent = 'Ditambahkan ✓';
+      setTimeout(function(){ aBtn.textContent = '+ Tambah ke Keranjang'; }, 900);
     }
   });
 
