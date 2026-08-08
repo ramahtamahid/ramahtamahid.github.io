@@ -125,9 +125,10 @@
     cursor:pointer;
   }
   .card-swatch{
-    height:150px;
+    aspect-ratio:4/5;
     display:flex; align-items:center; justify-content:center;
     position:relative;
+    overflow:hidden;
     background:
       repeating-linear-gradient(135deg, rgba(238,244,251,0.06) 0px, rgba(238,244,251,0.06) 2px, transparent 2px, transparent 20px);
   }
@@ -136,7 +137,7 @@
     display:flex; align-items:center; justify-content:center;
     font-family:Georgia, serif; font-weight:700; color:#FFFFFF; font-size:1.1rem;
   }
-  .card-swatch img{width:100%; height:100%; object-fit:contain;}
+  .card-swatch img{width:100%; height:100%; object-fit:cover;}
   .grid-msg{
     grid-column:1/-1; text-align:center; padding:60px 10px; color:var(--cream-dim);
   }
